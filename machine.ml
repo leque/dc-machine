@@ -6,6 +6,7 @@ type term =
   | App of term * term
   | Reset of term
   | Control of variable * term
+  | Shift of variable * term
 
 module EnvMap = Map.Make(String)
 
@@ -13,6 +14,7 @@ type env = value EnvMap.t
 and value =
   | Closure of variable * term * env
   | ContC of context * trail
+  | ContS of context * trail
 and context =
   | End
   | Arg of (term * env) * context
@@ -41,6 +43,8 @@ let step1 = function
     Next (Eval (e, env, End, [], (c1, t1) :: c2))
   | Eval (Control (x, e), env, c1, t1, c2) ->
     Next (Eval (e, EnvMap.add x (ContC (c1, t1)) env, End, [], c2))
+  | Eval (Shift (x, e), env, c1, t1, c2) ->
+    Next (Eval (e, EnvMap.add x (ContS (c1, t1)) env, End, [], c2))
   | Cont1 (End, v, t1, c2) ->
     Next (Trail1 (t1, v, c2))
   | Cont1 (Arg ((e, env), c1), v, t1, c2) ->
@@ -49,6 +53,8 @@ let step1 = function
     Next (Eval (e, EnvMap.add x v env, c1, t1, c2))
   | Cont1 (Fun (ContC (c1', t1'), c1), v, t1, c2) ->
     Next (Cont1 (c1', v, t1' @ (c1 :: t1), c2))
+  | Cont1 (Fun (ContS (c1', t1'), c1), v, t1, c2) ->
+    Next (Cont1 (c1', v, t1, (c1', t1') :: c2))
   | Trail1 ([], v, c2) ->
     Next (Cont2 (c2, v))
   | Trail1 (c1 :: t1, v, c2) ->

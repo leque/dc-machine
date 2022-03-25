@@ -7,6 +7,8 @@ type term =
   | Reset of term
   | Control of variable * term
   | Shift of variable * term
+  | Control0 of variable * term
+  | Shift0 of variable * term
 
 module EnvMap = Map.Make(String)
 
@@ -45,6 +47,14 @@ let step1 = function
     Next (Eval (e, EnvMap.add x (ContC (c1, t1)) env, End, [], c2))
   | Eval (Shift (x, e), env, c1, t1, c2) ->
     Next (Eval (e, EnvMap.add x (ContS (c1, t1)) env, End, [], c2))
+  | Eval (Control0 (x, e), env, c1, t1, (c1', t1') :: c2) ->
+    Next (Eval (e, EnvMap.add x (ContC (c1, t1)) env, c1', t1', c2))
+  | Eval (Control0 (x, e), env, c1, t1, []) ->
+    Next (Eval (e, EnvMap.add x (ContC (c1, t1)) env, End, [], []))
+  | Eval (Shift0 (x, e), env, c1, t1, (c1', t1') :: c2) ->
+    Next (Eval (e, EnvMap.add x (ContS (c1, t1)) env, c1', t1', c2))
+  | Eval (Shift0 (x, e), env, c1, t1, []) ->
+    Next (Eval (e, EnvMap.add x (ContS (c1, t1)) env, End, [], []))
   | Cont1 (End, v, t1, c2) ->
     Next (Trail1 (t1, v, c2))
   | Cont1 (Arg ((e, env), c1), v, t1, c2) ->

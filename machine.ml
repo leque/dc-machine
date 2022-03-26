@@ -26,6 +26,10 @@ type term =
 
 module EnvMap = Map.Make(String)
 
+let (.%[]) env key = EnvMap.find key env
+
+let (.%[]<-) env key v = EnvMap.add key v env
+
 type env = value EnvMap.t
 (** mapping from variable to value *)
 and value =
@@ -67,7 +71,7 @@ let init term = Eval (term, EnvMap.empty, End, [], [])
 let step1 = function
   (* -- Eval transition -- *)
   | Eval (Var x, env, c1, t1, c2) ->
-    Next (Cont1 (c1, EnvMap.find x env, t1, c2))
+    Next (Cont1 (c1, env.%[x], t1, c2))
   | Eval (Lam (x, e), env, c1, t1, c2) ->
     Next (Cont1 (c1, Closure (x, e, env), t1, c2))
   | Eval (App (e0, e1), env, c1, t1, c2) ->
@@ -75,24 +79,24 @@ let step1 = function
   | Eval (Reset e, env, c1, t1, c2) ->
     Next (Eval (e, env, End, [], (c1, t1) :: c2))
   | Eval (Control (x, e), env, c1, t1, c2) ->
-    Next (Eval (e, EnvMap.add x (ContC (c1, t1)) env, End, [], c2))
+    Next (Eval (e, (env.%[x] <- ContC (c1, t1)), End, [], c2))
   | Eval (Shift (x, e), env, c1, t1, c2) ->
-    Next (Eval (e, EnvMap.add x (ContS (c1, t1)) env, End, [], c2))
+    Next (Eval (e, (env.%[x] <- ContS (c1, t1)), End, [], c2))
   | Eval (Control0 (x, e), env, c1, t1, (c1', t1') :: c2) ->
-    Next (Eval (e, EnvMap.add x (ContC (c1, t1)) env, c1', t1', c2))
+    Next (Eval (e, (env.%[x] <- ContC (c1, t1)), c1', t1', c2))
   | Eval (Control0 (x, e), env, c1, t1, []) ->
-    Next (Eval (e, EnvMap.add x (ContC (c1, t1)) env, End, [], []))
+    Next (Eval (e, (env.%[x] <- ContC (c1, t1)), End, [], []))
   | Eval (Shift0 (x, e), env, c1, t1, (c1', t1') :: c2) ->
-    Next (Eval (e, EnvMap.add x (ContS (c1, t1)) env, c1', t1', c2))
+    Next (Eval (e, (env.%[x] <- ContS (c1, t1)), c1', t1', c2))
   | Eval (Shift0 (x, e), env, c1, t1, []) ->
-    Next (Eval (e, EnvMap.add x (ContS (c1, t1)) env, End, [], []))
+    Next (Eval (e, (env.%[x] <- ContS (c1, t1)), End, [], []))
   (* -- Cont1 transition -- *)
   | Cont1 (End, v, t1, c2) ->
     Next (Trail1 (t1, v, c2))
   | Cont1 (Arg ((e, env), c1), v, t1, c2) ->
     Next (Eval (e, env, Fun (v, c1), t1, c2))
   | Cont1 (Fun (Closure (x, e, env), c1), v, t1, c2) ->
-    Next (Eval (e, EnvMap.add x v env, c1, t1, c2))
+    Next (Eval (e, (env.%[x] <- v), c1, t1, c2))
   | Cont1 (Fun (ContC (c1', t1'), c1), v, t1, c2) ->
     Next (Cont1 (c1', v, t1' @ (c1 :: t1), c2))
   | Cont1 (Fun (ContS (c1', t1'), c1), v, t1, c2) ->

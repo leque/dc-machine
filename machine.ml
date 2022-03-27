@@ -46,8 +46,11 @@ and context =
   (** [\[\] term] *)
   | Fun of value * context
   (** [value \[\]] *)
+(** head part of a continuation *)
 and trail = context list
+  (** trail part of a continuation. head + trail part can be captured by control, etc. *)
 and meta_context = (context * trail) list
+  (** meta continuation *)
 
 (** machine state *)
 type state =

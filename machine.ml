@@ -30,8 +30,9 @@ let (.%[]) env key = EnvMap.find key env
 
 let (.%[]<-) env key v = EnvMap.add key v env
 
-type env = value EnvMap.t
 (** mapping from variable to value *)
+type env = value EnvMap.t
+
 and value =
   | Closure of variable * term * env
   (** function closure *)
@@ -39,6 +40,8 @@ and value =
   (** continuation captured by control, control0 *)
   | ContS of context * trail
   (** continuation captured by shift, shift0 *)
+
+(** head part of a continuation *)
 and context =
   | End
   (** [\[\]] *)
@@ -46,11 +49,12 @@ and context =
   (** [\[\] term] *)
   | Fun of value * context
   (** [value \[\]] *)
-(** head part of a continuation *)
+
+(** trail part of a continuation. head + trail part can be captured by control, etc. *)
 and trail = context list
-  (** trail part of a continuation. head + trail part can be captured by control, etc. *)
+
+(** meta continuation *)
 and meta_context = (context * trail) list
-  (** meta continuation *)
 
 (** machine state *)
 type state =

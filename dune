@@ -1,2 +1,3 @@
 (executable
- (name machine))
+ (name machine)
+ (preprocess (pps ppx_deriving.show)))

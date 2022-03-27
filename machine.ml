@@ -5,6 +5,7 @@
    https://dl.acm.org/doi/10.1145/2794078
  *)
 type variable = string
+[@@deriving show { with_path = false }]
 
 type term =
   | Var of variable
@@ -23,6 +24,7 @@ type term =
   (** control0 *)
   | Shift0 of variable * term
   (** shift0 *)
+[@@deriving show { with_path = false }]
 
 module EnvMap = Map.Make(String)
 
@@ -31,7 +33,8 @@ let (.%[]) env key = EnvMap.find key env
 let (.%[]<-) env key v = EnvMap.add key v env
 
 (** mapping from variable to value *)
-type env = value EnvMap.t
+type env = value EnvMap.t [@printer fun fmt _ -> fprintf fmt "<env>"]
+[@@deriving show { with_path = false }]
 
 and value =
   | Closure of variable * term * env
@@ -40,6 +43,7 @@ and value =
   (** continuation captured by control, control0 *)
   | ContS of context * trail
   (** continuation captured by shift, shift0 *)
+[@@deriving show { with_path = false }]
 
 (** head part of a continuation *)
 and context =
@@ -49,12 +53,15 @@ and context =
   (** [\[\] term] *)
   | Fun of value * context
   (** [value \[\]] *)
+[@@deriving show { with_path = false }]
 
 (** trail part of a continuation. head + trail part can be captured by control, etc. *)
 and trail = context list
+[@@deriving show { with_path = false }]
 
 (** meta continuation *)
 and meta_context = (context * trail) list
+[@@deriving show { with_path = false }]
 
 (** machine state *)
 type state =
@@ -66,6 +73,7 @@ type state =
   (** trail application *)
   | Cont2 of meta_context * value
   (** meta_context application *)
+[@@deriving show { with_path = false }]
 
 type step =
   | Finish of value
@@ -129,9 +137,34 @@ let step1 = function
   | Cont2 ([], v) ->
     Finish v
 
+let p = [%derive.show: state]
+
 (** evaluation *)
-let eval term =
+let eval f term =
   let rec loop = function
     | Finish v -> v
-    | Next s -> loop (step1 s)
+    | Next s ->
+      print_endline @@ f s;
+      loop (step1 s)
   in loop @@ Next (init term)
+
+module L = struct
+  let v x = Var x
+  let lam x f = Lam (x, f (v x))
+  let (@) f t = App (f, t)
+  let reset t = Reset t
+  let control x f = Control (x, f (v x))
+  let shift x f = Shift (x, f (v x))
+  let control0 x f = Control0 (x, f (v x))
+  let shift0 x f = Shift0 (x, f (v x))
+end
+
+let () =
+  let t =
+    L.(reset ((lam "x" (fun x -> x)) @
+              (control "k" (fun k ->
+                   k @ k @ (lam "x" (fun x -> x))))))
+  in
+  let p x = print_endline "-> "; p x in
+  let _ = eval p t
+  in ()

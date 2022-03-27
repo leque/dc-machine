@@ -103,7 +103,7 @@ let step1 = function
   | Cont1 (Fun (ContC (c', t'), c), v, t, mc) ->
     Next (Cont1 (c', v, t' @ (c :: t), mc))
   | Cont1 (Fun (ContS (c', t'), c), v, t, mc) ->
-    Next (Cont1 (c', v, t, (c', t') :: mc))
+    Next (Cont1 (c', v, t', (c, t) :: mc))
   (* -- Trail1 transition -- *)
   | Trail1 ([], v, mc) ->
     Next (Cont2 (mc, v))

@@ -85,12 +85,12 @@ let step1 = function
     Next (Eval (e, (env.%[x] <- ContC (c, t)), End, [], mc))
   | Eval (Shift (x, e), env, c, t, mc) ->
     Next (Eval (e, (env.%[x] <- ContS (c, t)), End, [], mc))
-  | Eval (Control0 (x, e), env, c, t, (c', t1') :: mc) ->
-    Next (Eval (e, (env.%[x] <- ContC (c, t)), c', t1', mc))
+  | Eval (Control0 (x, e), env, c, t, (c', t') :: mc) ->
+    Next (Eval (e, (env.%[x] <- ContC (c, t)), c', t', mc))
   | Eval (Control0 (x, e), env, c, t, []) ->
     Next (Eval (e, (env.%[x] <- ContC (c, t)), End, [], []))
-  | Eval (Shift0 (x, e), env, c, t, (c', t1') :: mc) ->
-    Next (Eval (e, (env.%[x] <- ContS (c, t)), c', t1', mc))
+  | Eval (Shift0 (x, e), env, c, t, (c', t') :: mc) ->
+    Next (Eval (e, (env.%[x] <- ContS (c, t)), c', t', mc))
   | Eval (Shift0 (x, e), env, c, t, []) ->
     Next (Eval (e, (env.%[x] <- ContS (c, t)), End, [], []))
   (* -- Cont1 transition -- *)
@@ -100,10 +100,10 @@ let step1 = function
     Next (Eval (e, env, Fun (v, c), t, mc))
   | Cont1 (Fun (Closure (x, e, env), c), v, t, mc) ->
     Next (Eval (e, (env.%[x] <- v), c, t, mc))
-  | Cont1 (Fun (ContC (c', t1'), c), v, t, mc) ->
-    Next (Cont1 (c', v, t1' @ (c :: t), mc))
-  | Cont1 (Fun (ContS (c', t1'), c), v, t, mc) ->
-    Next (Cont1 (c', v, t, (c', t1') :: mc))
+  | Cont1 (Fun (ContC (c', t'), c), v, t, mc) ->
+    Next (Cont1 (c', v, t' @ (c :: t), mc))
+  | Cont1 (Fun (ContS (c', t'), c), v, t, mc) ->
+    Next (Cont1 (c', v, t, (c', t') :: mc))
   (* -- Trail1 transition -- *)
   | Trail1 ([], v, mc) ->
     Next (Cont2 (mc, v))

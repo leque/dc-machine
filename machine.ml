@@ -70,45 +70,45 @@ let init term = Eval (term, EnvMap.empty, End, [], [])
 (** one-step reduction *)
 let step1 = function
   (* -- Eval transition -- *)
-  | Eval (Var x, env, c1, t1, c2) ->
-    Next (Cont1 (c1, env.%[x], t1, c2))
-  | Eval (Lam (x, e), env, c1, t1, c2) ->
-    Next (Cont1 (c1, Closure (x, e, env), t1, c2))
-  | Eval (App (e0, e1), env, c1, t1, c2) ->
-    Next (Eval (e0, env, Arg ((e1, env), c1), t1, c2))
-  | Eval (Reset e, env, c1, t1, c2) ->
-    Next (Eval (e, env, End, [], (c1, t1) :: c2))
-  | Eval (Control (x, e), env, c1, t1, c2) ->
-    Next (Eval (e, (env.%[x] <- ContC (c1, t1)), End, [], c2))
-  | Eval (Shift (x, e), env, c1, t1, c2) ->
-    Next (Eval (e, (env.%[x] <- ContS (c1, t1)), End, [], c2))
-  | Eval (Control0 (x, e), env, c1, t1, (c1', t1') :: c2) ->
-    Next (Eval (e, (env.%[x] <- ContC (c1, t1)), c1', t1', c2))
-  | Eval (Control0 (x, e), env, c1, t1, []) ->
-    Next (Eval (e, (env.%[x] <- ContC (c1, t1)), End, [], []))
-  | Eval (Shift0 (x, e), env, c1, t1, (c1', t1') :: c2) ->
-    Next (Eval (e, (env.%[x] <- ContS (c1, t1)), c1', t1', c2))
-  | Eval (Shift0 (x, e), env, c1, t1, []) ->
-    Next (Eval (e, (env.%[x] <- ContS (c1, t1)), End, [], []))
+  | Eval (Var x, env, c, t, mc) ->
+    Next (Cont1 (c, env.%[x], t, mc))
+  | Eval (Lam (x, e), env, c, t, mc) ->
+    Next (Cont1 (c, Closure (x, e, env), t, mc))
+  | Eval (App (e0, e1), env, c, t, mc) ->
+    Next (Eval (e0, env, Arg ((e1, env), c), t, mc))
+  | Eval (Reset e, env, c, t, mc) ->
+    Next (Eval (e, env, End, [], (c, t) :: mc))
+  | Eval (Control (x, e), env, c, t, mc) ->
+    Next (Eval (e, (env.%[x] <- ContC (c, t)), End, [], mc))
+  | Eval (Shift (x, e), env, c, t, mc) ->
+    Next (Eval (e, (env.%[x] <- ContS (c, t)), End, [], mc))
+  | Eval (Control0 (x, e), env, c, t, (c', t1') :: mc) ->
+    Next (Eval (e, (env.%[x] <- ContC (c, t)), c', t1', mc))
+  | Eval (Control0 (x, e), env, c, t, []) ->
+    Next (Eval (e, (env.%[x] <- ContC (c, t)), End, [], []))
+  | Eval (Shift0 (x, e), env, c, t, (c', t1') :: mc) ->
+    Next (Eval (e, (env.%[x] <- ContS (c, t)), c', t1', mc))
+  | Eval (Shift0 (x, e), env, c, t, []) ->
+    Next (Eval (e, (env.%[x] <- ContS (c, t)), End, [], []))
   (* -- Cont1 transition -- *)
-  | Cont1 (End, v, t1, c2) ->
-    Next (Trail1 (t1, v, c2))
-  | Cont1 (Arg ((e, env), c1), v, t1, c2) ->
-    Next (Eval (e, env, Fun (v, c1), t1, c2))
-  | Cont1 (Fun (Closure (x, e, env), c1), v, t1, c2) ->
-    Next (Eval (e, (env.%[x] <- v), c1, t1, c2))
-  | Cont1 (Fun (ContC (c1', t1'), c1), v, t1, c2) ->
-    Next (Cont1 (c1', v, t1' @ (c1 :: t1), c2))
-  | Cont1 (Fun (ContS (c1', t1'), c1), v, t1, c2) ->
-    Next (Cont1 (c1', v, t1, (c1', t1') :: c2))
+  | Cont1 (End, v, t, mc) ->
+    Next (Trail1 (t, v, mc))
+  | Cont1 (Arg ((e, env), c), v, t, mc) ->
+    Next (Eval (e, env, Fun (v, c), t, mc))
+  | Cont1 (Fun (Closure (x, e, env), c), v, t, mc) ->
+    Next (Eval (e, (env.%[x] <- v), c, t, mc))
+  | Cont1 (Fun (ContC (c', t1'), c), v, t, mc) ->
+    Next (Cont1 (c', v, t1' @ (c :: t), mc))
+  | Cont1 (Fun (ContS (c', t1'), c), v, t, mc) ->
+    Next (Cont1 (c', v, t, (c', t1') :: mc))
   (* -- Trail1 transition -- *)
-  | Trail1 ([], v, c2) ->
-    Next (Cont2 (c2, v))
-  | Trail1 (c1 :: t1, v, c2) ->
-    Next (Cont1 (c1, v, t1, c2))
+  | Trail1 ([], v, mc) ->
+    Next (Cont2 (mc, v))
+  | Trail1 (c :: t, v, mc) ->
+    Next (Cont1 (c, v, t, mc))
   (* -- Cont2 transition -- *)
-  | Cont2 ((c1, t1) :: c2, v) ->
-    Next (Cont1 (c1, v, t1, c2))
+  | Cont2 ((c, t) :: mc, v) ->
+    Next (Cont1 (c, v, t, mc))
   | Cont2 ([], v) ->
     Finish v
 

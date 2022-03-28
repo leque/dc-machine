@@ -95,9 +95,11 @@ let step1 = function
     Next (Eval (e, (env.%[x] <- ContS (c, t)), End, [], mc))
   | Eval (Control0 (x, e), env, c, t, mc) ->
     let c', t', mc = pop_metacont mc in
+    (* pop meta continuation = remove prompt *)
     Next (Eval (e, (env.%[x] <- ContC (c, t)), c', t', mc))
   | Eval (Shift0 (x, e), env, c, t, mc) ->
     let c', t', mc = pop_metacont mc in
+    (* pop meta continuation = remove prompt *)
     Next (Eval (e, (env.%[x] <- ContS (c, t)), c', t', mc))
   (* -- Cont1 transition -- *)
   | Cont1 (End, v, t, mc) ->
@@ -107,8 +109,14 @@ let step1 = function
   | Cont1 (Fun (Closure (x, e, env), c), v, t, mc) ->
     Next (Eval (e, (env.%[x] <- v), c, t, mc))
   | Cont1 (Fun (ContC (c', t'), c), v, t, mc) ->
+    (* continuations captured by control do not install a prompt,
+       i.e. current continuation could be captured by further delimcont operators,
+       so `c` and `t` go into the current context (as trail)  *)
     Next (Cont1 (c', v, t' @ (c :: t), mc))
   | Cont1 (Fun (ContS (c', t'), c), v, t, mc) ->
+    (* continuations captured by shift install a prompt,
+       i.e. current continuation will not be captured by further delimcont operators,
+       so `c` and `t` go into the meta continuation.  *)
     Next (Cont1 (c', v, t', (c, t) :: mc))
   (* -- Trail1 transition -- *)
   | Trail1 ([], v, mc) ->

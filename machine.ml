@@ -74,6 +74,10 @@ type step =
 (** create initial state *)
 let init term = Eval (term, EnvMap.empty, End, [], [])
 
+let pop_metacont = function
+  | [] -> End, [], []
+  | (c', t') :: mc -> c', t', mc
+
 (** one-step reduction *)
 let step1 = function
   (* -- Eval transition -- *)
@@ -89,14 +93,12 @@ let step1 = function
     Next (Eval (e, (env.%[x] <- ContC (c, t)), End, [], mc))
   | Eval (Shift (x, e), env, c, t, mc) ->
     Next (Eval (e, (env.%[x] <- ContS (c, t)), End, [], mc))
-  | Eval (Control0 (x, e), env, c, t, (c', t') :: mc) ->
+  | Eval (Control0 (x, e), env, c, t, mc) ->
+    let c', t', mc = pop_metacont mc in
     Next (Eval (e, (env.%[x] <- ContC (c, t)), c', t', mc))
-  | Eval (Control0 (x, e), env, c, t, []) ->
-    Next (Eval (e, (env.%[x] <- ContC (c, t)), End, [], []))
-  | Eval (Shift0 (x, e), env, c, t, (c', t') :: mc) ->
+  | Eval (Shift0 (x, e), env, c, t, mc) ->
+    let c', t', mc = pop_metacont mc in
     Next (Eval (e, (env.%[x] <- ContS (c, t)), c', t', mc))
-  | Eval (Shift0 (x, e), env, c, t, []) ->
-    Next (Eval (e, (env.%[x] <- ContS (c, t)), End, [], []))
   (* -- Cont1 transition -- *)
   | Cont1 (End, v, t, mc) ->
     Next (Trail1 (t, v, mc))

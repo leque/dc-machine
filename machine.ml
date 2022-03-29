@@ -144,7 +144,7 @@ let eval f term =
   let rec loop = function
     | Finish v -> v
     | Next s ->
-      print_endline @@ f s;
+      f s;
       loop (step1 s)
   in loop @@ Next (init term)
 
@@ -165,6 +165,8 @@ let () =
               (control "k" (fun k ->
                    k @ k @ (lam "x" (fun x -> x))))))
   in
-  let p x = print_endline "-> "; p x in
+  let p x =
+    print_endline "-> ";
+    print_endline @@ p x in
   let _ = eval p t
   in ()
